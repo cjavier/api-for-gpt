@@ -1,4 +1,3 @@
-// src/components/Register.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,14 +6,15 @@ import {
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { getAuth, createUserWithEmailAndPassword } from '../../firebase';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');  // Nuevo estado para el mensaje de éxito
-  const navigate = useNavigate();  // Hook para la navegación
+  const [successMessage, setSuccessMessage] = useState('');
+  const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -24,16 +24,42 @@ const Register = () => {
     }
     try {
       const auth = getAuth();
-      await createUserWithEmailAndPassword(auth, email, password);
-      setSuccessMessage('Usuario creado exitosamente!');  // Establece el mensaje de éxito
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const uid = userCredential.user.uid;
+
+       // Llamado API para enviar UID y correo al servidor
+       const response = await fetch('http://localhost:3000/crear-usuario', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uid, correo: email }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al realizar el llamado API');
+      }
+
+      const data = await response.json();
+      const syncUserId = data.user; // Asumiendo que esta es la estructura de la respuesta
+
+
+      const db = getFirestore();
+      // Asumiendo que quieres almacenar más información en el futuro, usa merge para no sobrescribir otros campos
+      await setDoc(doc(db, "usuarios", uid), {
+        uid: uid,
+        correo: email,
+        sync_user_id: syncUserId,
+      }, { merge: true });
+
+      setSuccessMessage('Usuario creado exitosamente!');
       setTimeout(() => {
-        navigate('/onboarding');  // Redirige al usuario a la página principal después de 2 segundos
+        navigate('/onboarding');
       }, 2000);
     } catch (error) {
       setError(error.message);
     }
   };
-
 
   return (
     <Container component="main" maxWidth="xs">

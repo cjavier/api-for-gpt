@@ -1,42 +1,69 @@
 // src/components/Onboarding.js
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Button, Grid, Typography } from '@mui/material';
+import {
+  Container, Box, Avatar, Typography,
+  TextField, Button, Grid, FormControlLabel,
+  Checkbox
+} from '@mui/material';
+import LockOutlinedIcon from '@mui/icons-material/ContentCopy';
+import AccountSettings from '../Accounts/AccountSettings';
+//import AccountAPI from '../Accounts/AccountAPI';
+
+
 
 const Onboarding = () => {
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');  // Nuevo estado para el mensaje de éxito
   const navigate = useNavigate();  // Hook para la navegación
 
-  const openStripeCheckout = () => {
-    window.open('https://buy.stripe.com/9AQg0aaHGa6xal2144', '_blank', 'noopener,noreferrer');
-  }
-  
+  const handleOnSubmitSuccess = () => {
+    navigate('/dashboard'); // Redirige a /dashboard
+};
+
 
   return (
-    <Container component="main" maxWidth="sm" sx={{ mt: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-      <Grid container spacing={3} justifyContent="center" alignItems="center">
-      <Typography variant="h2" >Selecciona como deseas iniciar</Typography>
-        <Grid item xs={12} md={6}>
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            onClick={openStripeCheckout}
-          >
-            $200 MXN al mes. para 100 Contenidos de blog
-          </Button>
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Button
-            variant="outlined"
-            size="large"
-            fullWidth
-            onClick={() => navigate('/onboarding-apikey')}
-          >
-            Aplicación Gratuita usando mi propia API Key de OpenAI
-          </Button>
-        </Grid>
-      </Grid>
-      <Typography variant="p" >Si no tienes cuenta de OpenAI y no tienes un API key disponible te recomendamos iniciar con la cuenta básica de $200 MXN al mes</Typography>
+    <Container component="main" maxWidth="xs">
+      {error && (
+        <Typography color="error" align="center" sx={{ mt: 2 }}>
+          {error}
+        </Typography>
+      )}
+      {successMessage && (  // Muestra el mensaje de éxito si existe
+        <Typography color="success" align="center" sx={{ mt: 2 }}>
+          {successMessage}
+        </Typography>
+      )}
+      <Box
+        sx={{
+          marginTop: 8,
+          marginBottom: 3,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+          <LockOutlinedIcon />
+        </Avatar>
+        <Typography component="h1" variant="h5">
+          Completa tus datos de la cuenta
+        </Typography>
+      </Box>
+  
+      <AccountSettings 
+            onSubmitSuccess={handleOnSubmitSuccess} 
+            submitButtonText="Guardar datos de la cuenta" 
+        />
+        
+       
+      <Typography variant="body2" align="center" sx={{ mt: 8 }}>
+        Copyright ©{' '}
+        <a href="https://mui.com/" variant="inherit">
+          Your Website
+        </a>{' '}
+        2023.
+      </Typography>
     </Container>
   );
 };

@@ -14,6 +14,8 @@ app.use(express.json());
 
 let syncToken = '';
 let credencialSAT = '';
+let id_user = '65ec835acaa98b2d6b500adc';
+let token = '';
 
 app.get('/', async (req, res) => {
     try {
@@ -32,15 +34,17 @@ app.get('/', async (req, res) => {
         console.log(`ID de usuario: ${id_user}`);
         
         // Crear una sesión para un usuario
-        let token = await Sync.auth(
+        token = await Sync.auth(
             {api_key: API_KEY}, // Tu API KEY
             {id_user: id_user} // ID de usuario
         );
+        syncToken = token.token;
 
         res.json({
-            message: 'Datos del Usuario y Token',
-            user: user,
-            token: token
+            message: 'Datos:',
+            user: id_user,
+            syncToken: syncToken,
+            credencialSAT : credencialSAT
         });
     } catch (error) {
         console.error(error);
@@ -50,16 +54,21 @@ app.get('/', async (req, res) => {
 
 app.get('/obtener-sesion', async (req, res) => {
     try {
+        const { sync_user_id } = req.query; 
+
+        if (!sync_user_id) {
+            return res.status(400).send('Se requiere el sync_user_id.');
+        }
         let session = await Sync.auth(
             {api_key: API_KEY},
-            {id_user: "65d2a62f5d205e7591371ec4"}
+            {id_user: sync_user_id}
         );
-        let token = session.token; 
-        syncToken = token;
-        console.log(`Token: ${token}`);
+        syncToken = session.token;
+        console.log(`Token: ${syncToken}`);
         res.json({
-            message: 'Datos de la sesión y Token',
-            token: token // Aquí devuelves el token obtenido
+            message: 'Datos obtenidos exitosamente',
+            user: sync_user_id,
+            token: syncToken,
         });
     } catch (error) {
         console.error(error);
@@ -91,8 +100,10 @@ app.get('/crear-credencial', async (req, res) => {
         console.log(credencialSAT);
 
         res.json({
-            message: 'Credencial creada exitosamente',
-            credential: credential // Devuelve la respuesta de la creación de la credencial
+            message: 'Datos:',
+            user: id_user,
+            syncToken: syncToken,
+            credencialSAT : credencialSAT
         });
     } catch (error) {
         console.error(error);
@@ -100,15 +111,19 @@ app.get('/crear-credencial', async (req, res) => {
     }
 });
 
-app.get('/crear-usuario', async (req, res) => {
+app.post('/crear-usuario', async (req, res) => {
     try {
+        const { uid, correo } = req.body;
+        if (!uid || !correo) {
+            return res.status(400).send('Falta el uid o el correo en la solicitud.');
+        }
         // Crear un usuario en Sync
         let user = await Sync.run(
             {api_key: API_KEY}, 
             '/users', 
             {
-                id_external: 'MIST030781',
-                name: 'Rey Misterio3'
+                id_external: uid,
+                name: correo
             }, 
             'POST'
         );
@@ -120,17 +135,12 @@ app.get('/crear-usuario', async (req, res) => {
             {api_key: API_KEY},
             {id_user: id_user}
         );
-
-        // Aquí, opcionalmente obtén los JWKs si estás utilizando el modo estricto en el widget
-        // Supongamos que los JWKs se obtienen así (esto es solo un ejemplo, adapta según tu caso):
-        // let jwks = obtenerJWKSDeAlgunaManera();
+        syncToken = session.token;
 
         res.json({
-            message: 'Usuario y Token creados con éxito',
-            token: session.token,
-            // Si estás usando JWKs, también devuélvelos aquí
-            // authorization: jwks.authorization,
-            // body: jwks.body
+            message: 'Datos recibidos:',
+            user: id_user,
+            syncToken: syncToken,
         });
         console.log(session.token);
     } catch (error) {
@@ -144,7 +154,7 @@ app.get('/ruta-para-refrescar-token', async (req, res) => {
     try {
         // Asumiendo que recibimos el id_user de alguna manera (e.g., a través de un JWT)
         // Para este ejemplo, lo recibirás como una query param por simplicidad
-        const id_user = req.query.id_user;
+       // const id_user = req.query.id_user;
 
         if (!id_user) {
             return res.status(400).send('ID de usuario no proporcionado');
@@ -155,10 +165,14 @@ app.get('/ruta-para-refrescar-token', async (req, res) => {
             {api_key: API_KEY},
             {id_user: id_user} // ID de usuario para el cual refrescar el token
         );
+        
+        syncToken = newToken.token;
 
         res.json({
-            message: 'Token refrescado con éxito',
-            newToken: newToken.token // Asegúrate de ajustar según la respuesta de tu API
+            message: 'Datos:',
+            user: id_user,
+            syncToken: syncToken,
+            credencialSAT : credencialSAT
         });
     } catch (error) {
         console.error(error);

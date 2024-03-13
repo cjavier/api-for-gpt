@@ -11,12 +11,15 @@
     <script>
       var params = {
         // Set up the token
-        token: '77c19f18e925f1fbbb3fb1c35a80742b4c540ed1c2a626c02c4d8deaad4dd528',
+        token: '05346bf93dd0e1d236fbbbf51d42855a875761b144eaae78792bdc153cbf90e5',
         config: {
-          navigation: {
-            displayStatusInToast: true,
-          },
-        },
+  // Set up the widget in Spanish language
+  locale: "es",
+  navigation: {
+    enableBackNavigation: false,
+    displayBusinessSites: false,
+  }
+},
       };
       var syncWidget = new SyncWidget(params);
       syncWidget.open();

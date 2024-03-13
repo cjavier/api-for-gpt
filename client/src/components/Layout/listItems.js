@@ -26,7 +26,7 @@ export const mainListItems = (
       </ListItemIcon>
       <ListItemText primary="Transacciones" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/keywords">
+    <ListItemButton component={Link} to="/integrar-sat">
       <ListItemIcon>
         <AccountBalanceIcon />
       </ListItemIcon>

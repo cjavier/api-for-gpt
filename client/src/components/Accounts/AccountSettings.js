@@ -21,17 +21,15 @@ export default function AccountSettings({ onSubmitSuccess, submitButtonText = "A
           if (!currentUser) return;
       
           const db = getFirestore();
-          const businessCollection = collection(db, 'Business');
-          const q = query(businessCollection, where('userId', '==', currentUser.uid));
+          const businessCollection = collection(db, 'usuarios');
+          const q = query(businessCollection, where('uid', '==', currentUser.uid));
           const querySnapshot = await getDocs(q);
       
           if (!querySnapshot.empty) {
             const businessData = querySnapshot.docs[0].data();
             setFormData({
-              empresa: businessData.empresa || '',
               firstname: businessData.firstname || '',
               lastname: businessData.lastname || '',
-              openaikey: businessData.openaikey || '',
             });
           }
         };
@@ -55,14 +53,12 @@ export default function AccountSettings({ onSubmitSuccess, submitButtonText = "A
           }
   
           const businessData = {
-              userId: currentUser.uid,
-              empresa: formData.empresa,
+              uid: currentUser.uid,
               firstname: formData.firstname,
               lastname: formData.lastname,
-              openaikey: formData.openaikey // Guarda la API Key
           };
   
-          const businessCollection = collection(getFirestore(), 'Business');
+          const businessCollection = collection(getFirestore(), 'usuarios');
           await setDoc(doc(businessCollection, currentUser.uid), businessData, { merge: true });
   
           console.log('Datos de Business actualizados exitosamente.');
@@ -78,14 +74,7 @@ export default function AccountSettings({ onSubmitSuccess, submitButtonText = "A
     return (
         <Grid item xs={12}>
             <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }}>
-                <TextField
-                    label="Nombre de la empresa"
-                    name="empresa"
-                    margin="normal"
-                    placeholder={formData.empresa || ""}
-                    onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
-                />
+                
                 <TextField
                     label="Tu Nombre"
                     name="firstname"
