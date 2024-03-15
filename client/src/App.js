@@ -8,6 +8,7 @@ import Register from './components/Accounts/Register';
 import ForgotPassword from './components/ForgotPassword';
 import SAT from './components/SAT';
 import FacturasSAT from './components/FacturasSAT';
+import TransaccionesSAT from './components/TransaccionesSAT';
 
 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
@@ -29,6 +30,7 @@ function App() {
           <Route path="/integrar-sat" element={<SAT />} />
           <Route path="/facturas-sat" element={<FacturasSAT />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/transacciones-sat" element={<TransaccionesSAT />} />
         </Routes>
       </div>
     </Router>

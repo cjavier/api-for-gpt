@@ -26,17 +26,23 @@ export const mainListItems = (
       </ListItemIcon>
       <ListItemText primary="Transacciones" />
     </ListItemButton>
+    <ListItemButton component={Link} to="/transacciones-sat">
+      <ListItemIcon>
+        <ReceiptIcon />
+      </ListItemIcon>
+      <ListItemText primary="Transacciones SAT" />
+    </ListItemButton>
     <ListItemButton component={Link} to="/integrar-sat">
       <ListItemIcon>
         <AccountBalanceIcon />
       </ListItemIcon>
-      <ListItemText primary="SAT" />
+      <ListItemText primary="Sincronizar con el SAT" />
     </ListItemButton>
     <ListItemButton component={Link} to="/facturas-sat">
       <ListItemIcon>
         <ReceiptIcon />
       </ListItemIcon>
-      <ListItemText primary="Sincronizar Facturas" />
+      <ListItemText primary="Bajar Facturas" />
     </ListItemButton>
     <ListItemButton component={Link} to="/publicar">
       <ListItemIcon>

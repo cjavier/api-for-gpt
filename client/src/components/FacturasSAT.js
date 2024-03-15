@@ -105,31 +105,36 @@ export default function FacturasSAT() {
   };
   function cleanTransactionsData(transactions) {
     return transactions.map(transaction => {
-      // Asume que esta es la lógica para limpiar una sola transacción.
-      // Modifica según las propiedades específicas que necesitas conservar.
-      let cleanedTransaction = {
-        id_transaction: transaction.id_transaction,
-        description: transaction.description,
-        amount: transaction.amount,
-        currency: transaction.currency,
-        dt_transaction: transaction.dt_transaction,
-        tax_id: transaction.extra?.tax_id,
-        reference: transaction.reference,
-        attachments: transaction.attachments.map(att => ({
-          id_attachment: att.id_attachment,
-          file: att.file,
-          url: att.url
-        })),
-        // Agrega o elimina campos según sea necesario.
-      };
-      // Omitir propiedades undefined
-    Object.keys(cleanedTransaction).forEach(key => 
-      cleanedTransaction[key] === undefined && delete cleanedTransaction[key]
-    );
-    console.log(cleanedTransaction);
+      // Extraer id_attachment y asegurarse de que attachments sea un array de strings
+    const attachmentsIds = transaction.attachments.map(att => att.id_attachment);
+
+    // Guardar parse_content como un objeto JSON. Asumiendo que quieres el primer elemento de attachments para parse_content
+    const parseContent = transaction.attachments[0]?.parse_content ? JSON.stringify(transaction.attachments[0].parse_content) : '{}';
+
+    // Construir la transacción limpia
+    let cleanedTransaction = {
+      id_transaction: transaction.id_transaction,
+      description: transaction.description,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      dt_transaction: transaction.dt_transaction,
+      dt_created: transaction.dt_created,
+      reference: transaction.reference,
+      tax_id: transaction.extra?.tax_id,
+      reference: transaction.reference,
+      attachments: attachmentsIds, // Arreglo de id_attachment como strings
+      parse_content: parseContent, // parse_content como un string JSON
+    };
+  
+      // Omitir propiedades undefined del objeto principal
+      Object.keys(cleanedTransaction).forEach(key => 
+        cleanedTransaction[key] === undefined && delete cleanedTransaction[key]
+      );
+  
       return cleanedTransaction;
     });
   }
+  
   
   
 
@@ -139,8 +144,8 @@ export default function FacturasSAT() {
       const SAT_credential = await obtenerSATCredential();
       if (!SAT_credential) return;
       const transactions = await obtainTransactions(SAT_credential);
-      //const cleanTransactions = await cleanTransactionsData(transactions);
-      const syncCount = await checkDuplicatedandSave(transactions);
+      const cleanTransactions = await cleanTransactionsData(transactions);
+      const syncCount = await checkDuplicatedandSave(cleanTransactions);
 
       setSyncMessage(`Se sincronizaron ${syncCount} de ${transactions.length} facturas encontradas en el SAT`);
     } catch (error) {
