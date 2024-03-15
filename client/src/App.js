@@ -7,6 +7,7 @@ import Onboarding from './components/Onboarding/Onboarding';
 import Register from './components/Accounts/Register';
 import ForgotPassword from './components/ForgotPassword';
 import SAT from './components/SAT';
+import FacturasSAT from './components/FacturasSAT';
 
 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/cuenta" element={<Account />} />
           <Route path="/integrar-sat" element={<SAT />} />
+          <Route path="/facturas-sat" element={<FacturasSAT />} />
           <Route path="/onboarding" element={<Onboarding />} />
         </Routes>
       </div>
