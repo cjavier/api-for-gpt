@@ -5,6 +5,7 @@ import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import Face3Icon from '@mui/icons-material/Face3';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import CurrencyExchangeIcon from '@mui/icons-material/CurrencyExchange';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -19,6 +20,12 @@ export const mainListItems = (
         <DashboardIcon />
       </ListItemIcon>
       <ListItemText primary="Dashboard" />
+    </ListItemButton>
+    <ListItemButton component={Link} to="/asistente">
+      <ListItemIcon>
+        <Face3Icon />
+      </ListItemIcon>
+      <ListItemText primary="Asistente" />
     </ListItemButton>
     <ListItemButton component={Link} to="/buyerpersonas">
       <ListItemIcon>
