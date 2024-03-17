@@ -3,8 +3,6 @@ require('dotenv').config();
 const Sync = require('@paybook/sync-js');
 const multer = require('multer');
 const fs = require('fs');
-//import "@paybook/sync-widget/dist/widget.css";
-//import SyncWidget from "@paybook/sync-widget";
 const cors = require('cors');
 const app = express();
 const OpenAI = require("openai");
@@ -20,46 +18,11 @@ const openai = new OpenAI();
 app.use(cors());
 app.use(express.json());
 
-let syncToken = '';
-let credencialSAT = '';
-let id_user = '65ec835acaa98b2d6b500adc';
-let token = '';
 let currentThreadId = null; // Variable para mantener el ID del hilo actual entre peticiones
 
 
 app.get('/', async (req, res) => {
-    try {
-        // Crear un usuario
-        let user = await Sync.run(
-            {api_key: SYNCFY_API_KEY}, 
-            '/users', 
-            {
-                id_external: 'MIST079001',
-                name: 'Rey Misterio4'
-            }, 
-            'POST'
-        );
-
-        let {id_user} = user;
-        console.log(`ID de usuario: ${id_user}`);
-        
-        // Crear una sesión para un usuario
-        token = await Sync.auth(
-            {api_key: SYNCFY_API_KEY}, // Tu API KEY
-            {id_user: id_user} // ID de usuario
-        );
-        syncToken = token.token;
-
-        res.json({
-            message: 'Datos:',
-            user: id_user,
-            syncToken: syncToken,
-            credencialSAT : credencialSAT
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Ocurrió un error al procesar la solicitud.');
-    }
+    res.send('Servidor Activo')
 });
 
 app.get('/obtener-sesion', async (req, res) => {
@@ -73,7 +36,7 @@ app.get('/obtener-sesion', async (req, res) => {
             {api_key: SYNCFY_API_KEY},
             {id_user: sync_user_id}
         );
-        syncToken = session.token;
+        const syncToken = session.token;
         console.log(`Token: ${syncToken}`);
         res.json({
             message: 'Datos obtenidos exitosamente',
@@ -86,40 +49,6 @@ app.get('/obtener-sesion', async (req, res) => {
     }
 });
 
-app.get('/crear-credencial', async (req, res) => {
-    try {
-        const payload = {
-            id_site: "56cf5728784806f72b8b456f",
-            credentials: {
-                rfc: "ACM010101ABC",
-                password: "test"
-            },
-            options: {
-                search_from: "2024-01-01",
-                search_to: "2024-01-31"
-            }
-        };
-
-        let credential = await Sync.run(
-            {token: syncToken}, 
-            '/credentials', 
-            payload, 
-            'POST'
-        );
-        credencialSAT = credential.id_credential;
-        console.log(credencialSAT);
-
-        res.json({
-            message: 'Datos:',
-            user: id_user,
-            syncToken: syncToken,
-            credencialSAT : credencialSAT
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Ocurrió un error al procesar la solicitud.');
-    }
-});
 
 app.post('/crear-usuario', async (req, res) => {
     try {
@@ -159,60 +88,6 @@ app.post('/crear-usuario', async (req, res) => {
     }
 });
 
-app.post('/asistente-ia', async (req, res) => {
-    const { content, file_ids } = req.body; // Asume que el mensaje del usuario y el file_id opcional vienen en el cuerpo de la solicitud
-    let threadId = currentThreadId; // Asume que existe una variable `currentThreadId` para mantener el estado del hilo
-    console.log("Current thread:", threadId, "Content:", content, "File IDs:", file_ids);
-    try {
-        if (!threadId) {
-            const thread = await openai.beta.threads.create();
-            threadId = thread.id; // Guarda el nuevo ID del hilo para su uso posterior
-            currentThreadId = threadId; // Asume que estás almacenando este ID en una variable global o en algún almacén de estado
-        }
-        console.log("Thread:", threadId);
-        
-        const messageOptions = {
-            role: "user",
-            content: content,
-        };
-        
-        // Añadir file_ids al objeto messageOptions si fileId está presente
-        if (file_ids) {
-            messageOptions.file_ids = file_ids;
-        }
-        console.log("Message:", messageOptions);
-
-        // Crea un nuevo mensaje en el hilo
-        await openai.beta.threads.messages.create(threadId, messageOptions);
-
-        // Crea un nuevo 'run' en el hilo
-        let run = await openai.beta.threads.runs.create(threadId, { 
-            assistant_id: "asst_VV22DJTqPF8iofKiAJRC7iI0"
-        });
-
-        // Espera hasta que el 'run' se complete
-        while (['queued', 'in_progress', 'cancelling'].includes(run.status)) {
-            console.log("Status:", run.status);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Espera 1 segundo
-            run = await openai.beta.threads.runs.retrieve(threadId, run.id);
-        }
-
-        if (run.status === 'completed') {
-            // Lista los mensajes del hilo
-            const messages = await openai.beta.threads.messages.list(threadId);
-            const responseMessage = messages.data.find(m => m.role === 'assistant');
-
-            // Envía el mensaje de respuesta al cliente
-            res.json({ message: responseMessage.content[0].text.value });
-        } else {
-            res.status(500).send('Error al procesar la solicitud con el asistente de IA');
-        }
-    } catch (error) {
-        console.error('Error al procesar la solicitud:', error);
-        res.status(500).send('Error interno del servidor');
-    }
-});
-
 
 app.post('/asistente-ia-file', upload.single('file'), async (req, res) => {
     if (!req.file) {
@@ -241,6 +116,130 @@ app.post('/asistente-ia-file', upload.single('file'), async (req, res) => {
         res.status(500).send('Error uploading file');
     }
 });
+
+//
+// FUNCIONES
+//
+
+// Crear o recuperar un thread
+async function getOrCreateThread(threadId) {
+    if (threadId) {
+      return threadId;
+    } else {
+      const thread = await openai.beta.threads.create();
+      return thread.id;
+    }
+  }
+  
+  // Enviar un mensaje al thread
+  async function sendMessageToThread(threadId, content, fileIds) {
+    const messageOptions = {
+      role: "user",
+      content: content,
+    };
+  
+    if (fileIds) {
+      messageOptions.file_ids = fileIds;
+    }
+  
+    await openai.beta.threads.messages.create(threadId, messageOptions);
+  }
+
+  async function actionRequired(run) {
+    const requiredActions = run.required_action.submit_tool_outputs.tool_calls;
+    const toolCalls = run.required_action.submit_tool_outputs.tool_calls.map(toolCall => ({
+        id: toolCall.id,
+        output:  "",
+    }));
+    for (const action of requiredActions) {
+        switch (action.function.name) {
+            case "registerTransactions":
+                await registerTransactions(JSON.parse(action.function.arguments), run.thread_id, run.id, toolCalls);
+                break;
+            // Aquí podrías agregar más casos según sea necesario
+            default:
+                console.log(`No action handler defined for ${action.function.name}`);
+        }
+    }
+}
+
+async function registerTransactions(arguments, thread, run, toolCalls) {
+    console.log("Registering transactions with arguments:", arguments);
+    // Implementa la lógica para registrar transacciones aquí
+    await submitFunctionOutput(thread, run, toolCalls);
+}
+// ejemplo con outputs
+//const outputs = [
+//    { tool_call_id: "call_001", output: "Resultado del tool call 001" },
+//];
+//await submitFunctionOutput(threadId, runId, outputs);
+
+async function submitFunctionOutput(threadId, runId, toolCalls) {
+    const toolOutputs = toolCalls.map(toolCall => ({
+        tool_call_id: toolCall.id,
+        output: toolCall.output || "", // Envía un string vacío si no hay output específico
+    }));
+
+    try {
+        await openai.beta.threads.runs.submitToolOutputs(threadId, runId, {
+            tool_outputs: toolOutputs,
+        });
+        console.log("Tool outputs submitted successfully.");
+    } catch (error) {
+        console.error("Error submitting tool outputs:", error);
+        throw error;
+    }
+}
+
+  
+  // Procesar un run en el thread y obtener la respuesta
+  async function processRunAndGetResponse(threadId) {
+    let run = await openai.beta.threads.runs.create(threadId, {
+      assistant_id: "asst_VV22DJTqPF8iofKiAJRC7iI0",
+    });
+  
+    while (['queued', 'in_progress', 'cancelling', 'requires_action'].includes(run.status)) {
+        if (run.status === 'requires_action') {
+            console.log(`Action required for run: ${run.id}`);
+            await actionRequired(run);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        run = await openai.beta.threads.runs.retrieve(threadId, run.id);
+        console.log(`Run status: ${run.status}`);
+    }
+  
+    if (run.status === 'completed') {
+      const messages = await openai.beta.threads.messages.list(threadId);
+      const responseMessage = messages.data.find(m => m.role === 'assistant');
+      return responseMessage.content[0].text.value;
+    } else {
+      throw new Error('Run did not complete successfully');
+    }
+  }
+  
+//
+// ENDPOINT DE ASISTENTE
+//
+
+app.post('/asistente-ia', async (req, res) => {
+    const { content, file_ids } = req.body;
+  
+    try {
+      let threadId = currentThreadId; // Asume que existe una variable global o de estado para el threadId
+      threadId = await getOrCreateThread(threadId);
+      currentThreadId = threadId; // Actualiza el threadId global/estado si es necesario
+  
+      await sendMessageToThread(threadId, content, file_ids);
+      const responseMessage = await processRunAndGetResponse(threadId);
+  
+      res.json({ message: responseMessage });
+    } catch (error) {
+      console.error('Error al procesar la solicitud:', error);
+      res.status(500).send('Error interno del servidor');
+    }
+  });
+  
 
 
 app.listen(PORT, () => {

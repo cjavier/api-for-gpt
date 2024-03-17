@@ -103,7 +103,7 @@ export default function Asistente() {
       <Grid item xs={12}>
         <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '70vh' }}>
           <h1>Accountant AI</h1>
-          <p>Habla con nuestro asistente</p>
+          <p>Habla con nuestro asistente. Mandale tu estado de cuenta en cualquier formato para que registre tus transacciones en el sistema.</p>
           <List sx={{ overflowY: 'auto', maxHeight: '50vh', mb: 1 }}>
             {messages.map((message, index) => (
               <ListItem key={index}>
@@ -138,18 +138,6 @@ export default function Asistente() {
             </Grid>
             
           </Grid>
-          <Button
-            variant="contained"
-            component="label"
-            disabled={uploading}
-          >
-            Subir Documento
-            <input
-              type="file"
-              hidden
-              onChange={handleFileUpload}
-            />
-          </Button>
           {uploading && <p>Subiendo...</p>}
         </Paper>
       </Grid>
