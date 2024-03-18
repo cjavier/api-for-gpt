@@ -27,11 +27,11 @@ export const mainListItems = (
       </ListItemIcon>
       <ListItemText primary="Asistente" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/buyerpersonas">
+    <ListItemButton component={Link} to="/transacciones-banco">
       <ListItemIcon>
         <ReceiptIcon />
       </ListItemIcon>
-      <ListItemText primary="Transacciones" />
+      <ListItemText primary="Transacciones Banco" />
     </ListItemButton>
     <ListItemButton component={Link} to="/transacciones-sat">
       <ListItemIcon>
@@ -51,7 +51,7 @@ export const mainListItems = (
       </ListItemIcon>
       <ListItemText primary="Bajar Facturas" />
     </ListItemButton>
-    <ListItemButton component={Link} to="/publicar">
+    <ListItemButton component={Link} to="/conciliacion">
       <ListItemIcon>
         <CurrencyExchangeIcon />
       </ListItemIcon>

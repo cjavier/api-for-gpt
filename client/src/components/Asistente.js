@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { Grid, Typography, Paper, Button, List, ListItem, ListItemText, Divider, TextField, Fab } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import UploadIcon from '@mui/icons-material/Upload';
 import Layout from './Layout/Layout';
+import { AuthContext } from '../AuthContext'; 
+
 
 export default function Asistente() {
   const [messages, setMessages] = useState([]);
@@ -11,6 +13,7 @@ export default function Asistente() {
   const [uploading, setUploading] = useState(false);
   const [fileIds, setFileIds] = useState([]); // Almacenar varios IDs
   const fileInputRef = useRef(null);
+  const { currentUser } = useContext(AuthContext);
 
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
@@ -51,9 +54,10 @@ export default function Asistente() {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const OpenAIAssistantCall = async (userMessage) => {
+  const OpenAIAssistantCall = async (userMessage, uid) => {
     try {
       const payload = {
+        uid,
         content: userMessage.text,
         file_ids: fileIds,
       };
@@ -81,7 +85,8 @@ export default function Asistente() {
 
   const MensajeUsuario = (userMessage) => {
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    OpenAIAssistantCall(userMessage);
+    const uid = currentUser.uid;
+    OpenAIAssistantCall(userMessage, uid);
   };
 
   const handleSendMessage = () => {

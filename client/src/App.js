@@ -10,6 +10,8 @@ import SAT from './components/SAT';
 import FacturasSAT from './components/FacturasSAT';
 import TransaccionesSAT from './components/TransaccionesSAT';
 import Asistente from './components/Asistente';
+import TransaccionesBanco from './components/TransaccionesBanco';
+import Conciliacion from './components/Conciliacion';
 
 
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
@@ -33,6 +35,8 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/transacciones-sat" element={<TransaccionesSAT />} />
           <Route path="/asistente" element={<Asistente />} />
+          <Route path="/transacciones-banco" element={<TransaccionesBanco />} />
+          <Route path="/conciliacion" element={<Conciliacion />} />
         </Routes>
       </div>
     </Router>

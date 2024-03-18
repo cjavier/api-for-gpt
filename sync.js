@@ -6,14 +6,22 @@ const fs = require('fs');
 const cors = require('cors');
 const app = express();
 const OpenAI = require("openai");
+const admin = require('firebase-admin');
+const { Timestamp } = admin.firestore;
 
 const PORT = process.env.PORT || 3000;
 const SYNCFY_API_KEY = process.env.SYNC_API_KEY;
 const OPENAI_API_KEY = process.env.SYNC_API_KEY;
+const serviceAccount = require('./contador-ai-firebase-adminsdk-ktp4l-44323405b2.json');
 
 const upload = multer({ dest: 'uploads/' });
 const openai = new OpenAI();
 
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+const db = admin.firestore();
 
 app.use(cors());
 app.use(express.json());
@@ -116,9 +124,43 @@ app.post('/asistente-ia-file', upload.single('file'), async (req, res) => {
         res.status(500).send('Error uploading file');
     }
 });
-
 //
-// FUNCIONES
+// FUNCIONES FIREBASE
+//
+const saveTransaction = async (transaction, uid) => {
+    try {
+      // Normaliza los campos
+      const amount = Number(transaction.amount); // Asegúrate de que amount sea un número
+      const description = String(transaction.description).trim(); // Asegúrate de que description sea un string
+      const date = new Date(transaction.date); // Convierte date a un objeto Date
+      const firebaseDate = Timestamp.fromDate(date);
+      // Genera el ID usando date y amount
+      // Asume que date está en formato YYYY-MM-DD y lo convierte a timestamp para el ID
+      const transactionId = `${transaction.date}_${amount}`;
+      console.log(`Transaction ID: ${transactionId}`);
+  
+      // Referencia al documento con el ID generado
+      const transactionRef = db.collection("usuarios").doc(uid).collection("transacciones").doc(transactionId);
+  
+      // Prepara el objeto de la transacción para guardar
+      const transactionToSave = {
+        date: firebaseDate,
+        description,
+        amount
+      };
+  
+      // Guarda o actualiza el documento en Firestore
+      await transactionRef.set(transactionToSave);
+      console.log(`Transaction saved: ${transactionId}`);
+    } catch (error) {
+      console.error(`Error saving transaction:`, error);
+    }
+  };
+  
+
+  
+//
+// FUNCIONES OPENAI
 //
 
 // Crear o recuperar un thread
@@ -145,7 +187,7 @@ async function getOrCreateThread(threadId) {
     await openai.beta.threads.messages.create(threadId, messageOptions);
   }
 
-  async function actionRequired(run) {
+  async function actionRequired(run, uid) {
     const requiredActions = run.required_action.submit_tool_outputs.tool_calls;
     const toolCalls = run.required_action.submit_tool_outputs.tool_calls.map(toolCall => ({
         id: toolCall.id,
@@ -154,7 +196,7 @@ async function getOrCreateThread(threadId) {
     for (const action of requiredActions) {
         switch (action.function.name) {
             case "registerTransactions":
-                await registerTransactions(JSON.parse(action.function.arguments), run.thread_id, run.id, toolCalls);
+                await registerTransactions(JSON.parse(action.function.arguments), run.thread_id, run.id, toolCalls, uid);
                 break;
             // Aquí podrías agregar más casos según sea necesario
             default:
@@ -163,9 +205,17 @@ async function getOrCreateThread(threadId) {
     }
 }
 
-async function registerTransactions(arguments, thread, run, toolCalls) {
+async function registerTransactions(arguments, thread, run, toolCalls, uid) {
     console.log("Registering transactions with arguments:", arguments);
-    // Implementa la lógica para registrar transacciones aquí
+    const transactions = arguments.transactions;
+    for (const transaction of transactions) {
+        try {
+            await saveTransaction(transaction, uid);
+            console.log(`Transaction registered: ${transaction.id}`);
+        } catch (error) {
+            console.error(`Error saving transaction ${transaction.id}:`, error);
+        }
+    }
     await submitFunctionOutput(thread, run, toolCalls);
 }
 // ejemplo con outputs
@@ -193,7 +243,7 @@ async function submitFunctionOutput(threadId, runId, toolCalls) {
 
   
   // Procesar un run en el thread y obtener la respuesta
-  async function processRunAndGetResponse(threadId) {
+  async function processRunAndGetResponse(threadId, uid) {
     let run = await openai.beta.threads.runs.create(threadId, {
       assistant_id: "asst_VV22DJTqPF8iofKiAJRC7iI0",
     });
@@ -201,7 +251,7 @@ async function submitFunctionOutput(threadId, runId, toolCalls) {
     while (['queued', 'in_progress', 'cancelling', 'requires_action'].includes(run.status)) {
         if (run.status === 'requires_action') {
             console.log(`Action required for run: ${run.id}`);
-            await actionRequired(run);
+            await actionRequired(run, uid);
         }
 
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -223,7 +273,7 @@ async function submitFunctionOutput(threadId, runId, toolCalls) {
 //
 
 app.post('/asistente-ia', async (req, res) => {
-    const { content, file_ids } = req.body;
+    const { uid, content, file_ids } = req.body;
   
     try {
       let threadId = currentThreadId; // Asume que existe una variable global o de estado para el threadId
@@ -231,7 +281,7 @@ app.post('/asistente-ia', async (req, res) => {
       currentThreadId = threadId; // Actualiza el threadId global/estado si es necesario
   
       await sendMessageToThread(threadId, content, file_ids);
-      const responseMessage = await processRunAndGetResponse(threadId);
+      const responseMessage = await processRunAndGetResponse(threadId, uid);
   
       res.json({ message: responseMessage });
     } catch (error) {
